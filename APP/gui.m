@@ -73,7 +73,7 @@ function varargout = gui_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 
-% --- Abrir ficheiro de áudio.
+% --- Abrir ficheiro de ?udio.
 function pushbutton1_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -86,7 +86,7 @@ player=audioplayer(audio,fs);
 handles.player=player;
 guidata(hObject, handles);
 
-% --- Reproduzir áudio.
+% --- Reproduzir ?udio.
 function pushbutton2_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -118,7 +118,7 @@ if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColo
 end
 
 
-% --- Botão Stop do áudio.
+% --- Bot?o Stop do ?udio.
 function pushbutton3_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton3 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -212,15 +212,14 @@ if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColo
 end
 
 
-% ---Exportar áudio.
+% ---Exportar ?udio.
 function pushbutton5_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton5 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 fs=handles.fs;
-exit=handles.exit;
-exit(1:2205, 1) = 2;
-audiowrite('myFile.wav', exit, 44100, 'BitsPerSample', 16);
+audio=handles.audio;
+audiowrite('teste.wav',audio, fs);
 guidata(hObject, handles);
 
 
