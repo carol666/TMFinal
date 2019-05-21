@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 14-May-2019 15:45:35
+% Last Modified by GUIDE v2.5 16-May-2019 14:16:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -78,12 +78,52 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[nome,local] = uigetfile('*.wav','Coloque Um Ficheiro mp3.');
-[audio,fs]=audioread(nome);
+[nome,local] = uigetfile('*.wav','Coloque Um Ficheiro mp3.');       % Abrir explorador para carregar ficheiro
+[audio,fs]=audioread(nome); 
 handles.audio=audio;
 handles.fs=fs;
 player=audioplayer(audio,fs);
 handles.player=player;
+guidata(hObject, handles);
+
+function wahwah(fs,audio,handles, hObject)
+y=audio;
+s=size(y,1);
+damp = 0.05;
+minf=500;
+maxf=3000;
+pitch = get(handles.slider7,'Value');
+string=[num2str(pitch) 'Hz'];
+set(handles.text9,'String',string);
+fc=4000;
+delta = pitch/fs;
+
+Fc=minf:delta:maxf;
+while(length(Fc) < length(y) )
+Fc= [ Fc (maxf:-delta:minf) ];
+Fc= [ Fc (minf:delta:maxf) ];
+end
+
+Fc = Fc(1:length(y));
+F1 = 2*sin((pi*Fc(1))/fs);
+Q1 = 2*damp;
+yh=zeros(size(y)); % criar vetores vazios
+iou=zeros(size(y));
+yl=zeros(size(y));
+yh(1) = y(1);
+iou(1) = F1*yh(1); % Evitar Sinais negativos
+yl(1) = F1*iou(1);
+
+for n=2:length(y),
+yh(n) = y(n) - yl(n-1) - Q1*iou(n-1);
+iou(n) = F1*yh(n) + iou(n-1);
+yl(n) = F1*iou(n) + yl(n-1);
+F1 = 2*sin((pi*Fc(n))/fs);
+end
+
+maxyb = max(abs(iou));  % Normalizar
+iou = iou/maxyb;
+handles.exit=iou;
 guidata(hObject, handles);
 
 % --- Reproduzir ?udio.
@@ -91,10 +131,60 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-a=get(handles.slider5_Callback,'Value');
-%apply volume (real time)
 player=handles.player;
-play(player);
+out = handles.audio;
+fs = handles.fs;
+%------------------- Volume ----------------------------------
+gain=get(handles.slider6,'Value');
+n=size(out);
+for i=1:n
+    audiotot(i)=(out(i)*gain);
+end
+%------------------Panning -----------------------------------
+ang_inicial = (get(handles.slider3,'Value')*-1); 
+ang_final=ang_inicial;
+v = 32;
+juncao_ang= (ang_inicial - ang_final)/v * pi / 180;
+
+seg = floor((length(audiotot)/v) - 1);
+m = 1;
+ang = ang_inicial * pi / 180; 
+exit=[[],[]];
+for i=1:v
+    A =[cos(ang), sin(ang); -sin(ang), cos(ang)];
+    stereo = [audiotot(m:m+seg);audiotot(m:m+seg)];
+    exit = [exit, A * stereo];
+    ang = ang + juncao_ang;
+    m = m + seg;
+end;
+%---------------Distortion------------------------------------------------
+if (get(handles.checkbox1,'Value') == get(handles.checkbox1,'Max'))     % Caso utilizador carregue na opção de usar efeito
+n=size(exit,1);
+y=zeros(n,1);
+gaindist=get(handles.slider5,'Value');
+string=[num2str(gaindist) '%'];
+set(handles.text7,'String',string);
+
+for i=1:n
+   y(i)=exit(i,1)*gaindist;
+   if(y(i)>1)
+       y(i)=1;
+   elseif (y(i)<-1)
+       y(i)=-1;
+   end
+end
+end
+%-----------------Wah-Wah--------------------------------------------
+if (get(handles.checkbox2,'Value') == get(handles.checkbox2,'Max'))
+ wahwah(fs,exit,handles,hObject);
+ exit = handles.exit;
+end
+%--------------Reproduzir áudio---------------------------------------
+playerpan=audioplayer(exit,fs);
+play(playerpan);
+handles.playerpan=playerpan;
+
+handles.exit=exit;
 guidata(hObject, handles);
 
 
@@ -125,7 +215,7 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton3 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-player=handles.player;
+player=handles.playerpan;
 stop(player);
 
 
@@ -134,40 +224,7 @@ function pushbutton4_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton4 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-out=handles.audio;
-fs=handles.fs;
 
-e=get(handles.slider1,'Value');
-d=get(handles.slider2,'Value');
-n=size(out);
-for i=1:n
-    audiotot(i)=(out(i)*e)+(out(i)*d);
-end
-
-ang_inicial = (get(handles.slider3,'Value')*-1); 
-ang_final=ang_inicial;
-v = 32;
-juncao_ang= (ang_inicial - ang_final)/v * pi / 180;
-
-seg = floor((length(audiotot)/v) - 1);
-m = 1;
-ang = ang_inicial * pi / 180; 
-exit=[[],[]];
-for i=1:v
-    A =[cos(ang), sin(ang); -sin(ang), cos(ang)];
-    stereo = [audiotot(m:m+seg);audiotot(m:m+seg)];
-    exit = [exit, A * stereo];
-    ang = ang + juncao_ang;
-    m = m + seg;
-end;
-fs = handles.fs;
-playerpan=audioplayer(exit,fs);
-play(playerpan);
-handles.playerpan=playerpan;
-
-    
-handles.exit=exit;
-guidata(hObject, handles);
 
 
 % --- Executes on slider movement.
@@ -220,19 +277,9 @@ function pushbutton5_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 fs=handles.fs;
-audio=handles.audio;
+audio=handles.exit;
 audiowrite('teste.wav',audio, fs);
 guidata(hObject, handles);
-
-
-% --- Executes on button press in pushbutton6.
-function pushbutton6_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton6 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-playerpan=handles.playerpan;
-stop(playerpan);
-
 
 % --- Executes on slider movement.
 function slider5_Callback(hObject, eventdata, handles)
@@ -254,3 +301,65 @@ function slider5_CreateFcn(hObject, eventdata, handles)
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
+
+
+% --- Executes on slider movement.
+function slider6_Callback(hObject, eventdata, handles)
+% hObject    handle to slider6 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function slider6_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider6 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on button press in checkbox1.
+function checkbox1_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox1
+
+
+% --- Executes on slider movement.
+function slider7_Callback(hObject, eventdata, handles)
+% hObject    handle to slider7 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function slider7_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider7 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on button press in checkbox2.
+function checkbox2_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox2
