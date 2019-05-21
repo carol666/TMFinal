@@ -16,7 +16,7 @@ function varargout = gui(varargin)
 %      stop.  All inputs are passed to gui_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".ds
+%      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
@@ -86,7 +86,7 @@ player=audioplayer(audio,fs);
 handles.player=player;
 guidata(hObject, handles);
 
-function wahwah(fs,audio,handles, hObject)
+function iou = wahwah(fs,audio,handles, hObject)  % Função para efeito Wah-wah
 y=audio;
 s=size(y,1);
 damp = 0.05;
@@ -123,8 +123,7 @@ end
 
 maxyb = max(abs(iou));  % Normalizar
 iou = iou/maxyb;
-handles.exit=iou;
-guidata(hObject, handles);
+
 
 % --- Reproduzir ?udio.
 function pushbutton2_Callback(hObject, eventdata, handles)
@@ -175,6 +174,7 @@ for i=1:n
 end
 end
 %-----------------Wah-Wah--------------------------------------------
+wah=@wahwah;
 if (get(handles.checkbox2,'Value') == get(handles.checkbox2,'Max'))
  wahwah(fs,exit,handles,hObject);
  exit = handles.exit;
