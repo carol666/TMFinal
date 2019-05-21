@@ -16,7 +16,7 @@ function varargout = gui(varargin)
 %      stop.  All inputs are passed to gui_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
+%      instance to run (singleton)".ds
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
