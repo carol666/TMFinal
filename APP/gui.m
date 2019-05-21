@@ -143,6 +143,40 @@ for i=1:v
     m = m + seg;
 end;
 
+function out = delay(fs,audio,handles)
+s=size(audio,1);
+out=zeros(s,1);
+%x=zeros(s,1);
+z=zeros(s,1);
+%y=zeros(s,1);
+%e=zeros(s,1);
+f=zeros(s,1);
+wet=get(handles.slider8,'Value');
+string=[num2str(wet) '%'];
+set(handles.text13,'String',string);
+vde=get(handles.slider9,'Value');
+string=[num2str(vde) 'ms'];
+set(handles.text14,'String',string);
+delay=round(vde*fs); %delay em samples
+feed=get(handles.slider10,'Value');
+string=[num2str(feed) '%'];
+set(handles.text15,'String',string);
+
+for i=1:s
+    x(i)=aii(i);
+    y(i)=x(i)*wet;
+    if(i-delay>=1)
+        e(i)=z(i-delay); 
+    else
+        e(i)=0; %se tiver vazio
+    end
+    
+    f(i)=e(i)*feed;
+    z(i)=x(i)+f(i);
+    out(i)=e(i)+y(i);
+    
+end
+
 % --- Reproduzir ?udio.
 function pushbutton2_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton2 (see GCBO)
@@ -181,6 +215,12 @@ end
 wah=@wahwah;
 if (get(handles.checkbox2,'Value') == get(handles.checkbox2,'Max'))
  exit = wah(fs,exit,handles);
+end
+
+%--------------- Delay-----------------------------------------------
+del=@delay;
+if (get(handles.checkbox3,'Value') == get(handles.checkbox2,'Max'))
+ exit = del(fs,exit,handles);
 end
 %--------------Reproduzir áudio---------------------------------------
 playerpan=audioplayer(exit,fs);
