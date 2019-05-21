@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 16-May-2019 14:16:11
+% Last Modified by GUIDE v2.5 21-May-2019 23:14:07
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -86,6 +86,19 @@ player=audioplayer(audio,fs);
 handles.player=player;
 guidata(hObject, handles);
 
+% --- Executes on button press in pushbutton8.
+function pushbutton8_Callback(hObject, eventdata, handles)  % Função para reproduzir original
+% hObject    handle to pushbutton8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+exit=handles.audio;
+fs=handles.fs;
+playerpan=audioplayer(exit,fs);
+play(playerpan);
+handles.playerpan=playerpan;
+handles.exit=exit;
+guidata(hObject, handles);
+
 function yb = wahwah(fs,audio,handles)  % Função para efeito Wah-wah
 damp=0.05;
 minf=500;
@@ -118,11 +131,12 @@ yh(n) = audio(n) - yl(n-1) - Q1*yb(n-1);
 yb(n) = F1*yh(n) + yb(n-1);
 yl(n) = F1*yb(n) + yl(n-1);
 F1 = 2*sin((pi*Fc(n))/fs);
+disp(yb);
 end
 
 maxyb = max(abs(yb));
 yb = yb/maxyb;
-disp(yb);
+%disp(yb);
 
 
 function exit = panning(audiotot, handles, hObject) % Função efeito panning
@@ -143,7 +157,7 @@ for i=1:v
     m = m + seg;
 end;
 
-function out = delay(fs,audio,handles)
+function out = delay(fs,audio,handles)  % Função para efeito delay
 s=size(audio,1);
 out=zeros(s,1);
 %x=zeros(s,1);
@@ -151,19 +165,19 @@ z=zeros(s,1);
 %y=zeros(s,1);
 %e=zeros(s,1);
 f=zeros(s,1);
-wet=get(handles.slider8,'Value');
+wet=get(handles.slider8,'Value');       % Botão wet/dry
 string=[num2str(wet) '%'];
 set(handles.text13,'String',string);
-vde=get(handles.slider9,'Value');
+vde=get(handles.slider9,'Value');       % Delay Time
 string=[num2str(vde) 'ms'];
 set(handles.text14,'String',string);
 delay=round(vde*fs); %delay em samples
-feed=get(handles.slider10,'Value');
+feed=get(handles.slider10,'Value');     % Feedback
 string=[num2str(feed) '%'];
 set(handles.text15,'String',string);
 
 for i=1:s
-    x(i)=aii(i);
+    x(i)=audio(i);
     y(i)=x(i)*wet;
     if(i-delay>=1)
         e(i)=z(i-delay); 
@@ -174,7 +188,6 @@ for i=1:s
     f(i)=e(i)*feed;
     z(i)=x(i)+f(i);
     out(i)=e(i)+y(i);
-    
 end
 
 % --- Reproduzir ?udio.
@@ -407,3 +420,82 @@ function checkbox2_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox2
+
+
+% --- Executes on slider movement.
+function slider8_Callback(hObject, eventdata, handles)
+% hObject    handle to slider8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function slider8_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on slider movement.
+function slider9_Callback(hObject, eventdata, handles)
+% hObject    handle to slider9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function slider9_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on slider movement.
+function slider10_Callback(hObject, eventdata, handles)
+% hObject    handle to slider10 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function slider10_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider10 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on button press in checkbox3.
+function checkbox3_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox3
+
+
+
+
