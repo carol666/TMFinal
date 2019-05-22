@@ -80,15 +80,13 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 [nome,local] = uigetfile('*.wav','Coloque Um Ficheiro mp3.');       % Abrir explorador para carregar ficheiro
 [audio,fs]=audioread(nome); 
-%----------------- Escrever Info do áudio no GUI ------------------------
+%----------------- Escrever Infor
 string=['Fs: ' num2str(fs) ' Hz']; % Frequência de amostragem
-set(handles.text17,'String',string);
-string=['File: ' num2str(nome) ]; % Nome do ficheiro
-set(handles.text16,'String',string)
-dur = round(length(audio)/fs);
-string=['Length: ' num2str(dur) 'seg']; % Duração do ficheiro
-set(handles.text18,'String',string);
-%----------------- Handles ------------------------------------------------
+set(handles.text41,'String',string);
+string=['Name: ' num2str(nome) ]; % Nome do ficheiro
+set(handles.text58,'String',string)
+
+
 handles.audio=audio;
 handles.fs=fs;
 player=audioplayer(audio,fs);
