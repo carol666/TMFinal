@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 21-May-2019 23:14:07
+% Last Modified by GUIDE v2.5 23-May-2019 22:03:30
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -80,13 +80,15 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 [nome,local] = uigetfile('*.wav','Coloque Um Ficheiro mp3.');       % Abrir explorador para carregar ficheiro
 [audio,fs]=audioread(nome); 
-%----------------- Escrever Infor
+%----------------- Escrever Info do áudio no GUI ------------------------
 string=['Fs: ' num2str(fs) ' Hz']; % Frequência de amostragem
-set(handles.text41,'String',string);
-string=['Name: ' num2str(nome) ]; % Nome do ficheiro
-set(handles.text58,'String',string)
-
-
+set(handles.text17,'String',string);
+string=['File: ' num2str(nome) ]; % Nome do ficheiro
+set(handles.text16,'String',string)
+dur = round(length(audio)/fs);
+string=['Length: ' num2str(dur) 'seg']; % Duração do ficheiro
+set(handles.text18,'String',string);
+%----------------- Handles ------------------------------------------------
 handles.audio=audio;
 handles.fs=fs;
 player=audioplayer(audio,fs);
@@ -106,7 +108,7 @@ handles.playerpan=playerpan;
 handles.exit=exit;
 guidata(hObject, handles);
 
-function yb = wahwah(fs,audio,handles)  % Função para efeito Wah-wah
+function yb = wahwah(fs,audio,handles,hObject)  % Função para efeito Wah-wah
 damp=0.05;
 minf=500;
 maxf=3000;
@@ -115,8 +117,8 @@ delta = Fw/fs;
 % create triangle wave of centre frequency values
 Fc=minf:delta:maxf;
 while(length(Fc) < length(audio) )
-Fc= [ Fc (maxf:-delta:minf) ];
-Fc= [ Fc (minf:delta:maxf) ];
+    Fc= [ Fc (maxf:-delta:minf) ];
+    Fc= [ Fc (minf:delta:maxf) ];
 end
 % trim tri wave to size of input
 Fc = Fc(1:length(audio));
@@ -138,12 +140,11 @@ yh(n) = audio(n) - yl(n-1) - Q1*yb(n-1);
 yb(n) = F1*yh(n) + yb(n-1);
 yl(n) = F1*yb(n) + yl(n-1);
 F1 = 2*sin((pi*Fc(n))/fs);
-disp(yb);
 end
 
 maxyb = max(abs(yb));
 yb = yb/maxyb;
-%disp(yb);
+
 
 
 function exit = panning(audiotot, handles, hObject) % Função efeito panning
@@ -164,7 +165,7 @@ for i=1:v
     m = m + seg;
 end;
 
-function out = delay(fs,audio,handles)  % Função para efeito delay
+function out = delay(fs,audio,handles,hObject)  % Função para efeito delay
 s=size(audio,1);
 out=zeros(s,1);
 %x=zeros(s,1);
@@ -197,21 +198,21 @@ for i=1:s
     out(i)=e(i)+y(i);
 end
 
-function y = distortion(exit,handles)
-n=size(exit,1);
-y=zeros(n,1);
-gaindist=get(handles.slider5,'Value');
-string=[num2str(gaindist) '%'];
-set(handles.text7,'String',string);
 
-for i=1:n
-   y(i)=exit(i,1)*gaindist;
-   if(y(i)>1)
-       y(i)=1;
-   elseif (y(i)<-1)
-       y(i)=-1;
-   end
-end
+function y = distortion(x,handles,hObject)
+gain=get(handles.slider5,'Value');
+string=[num2str(gain) '%'];
+set(handles.text7,'String',string);
+mix=get(handles.slider11,'Value');
+string=[num2str(mix) '%'];
+set(handles.text22,'String',string);
+
+
+q=x*gain/max(abs(x));
+z=sign(-q).*(1-exp(sign(-q).*q));
+y=mix*z*max(abs(x))/max(abs(z))+(1-mix)*x;
+y=y*max(abs(x))/max(abs(y));
+
 
 
 % --- Reproduzir ?udio.
@@ -228,30 +229,34 @@ n=size(out);
 for i=1:n
     audiotot(i)=(out(i)*gain);
 end
-%------------------Panning -----------------------------------
-pan = @panning;
-exit = pan(audiotot,handles,hObject);
-
+exit=audiotot;
 %---------------Distortion------------------------------------------------
 dist=@distortion;
 if (get(handles.checkbox1,'Value') == get(handles.checkbox1,'Max'))     % Caso utilizador carregue na opção de usar efeito
-exit = dist(exit,handles);
+exit = dist(exit,handles,hObject);
 end
 %-----------------Wah-Wah--------------------------------------------
 wah=@wahwah;
 if (get(handles.checkbox2,'Value') == get(handles.checkbox2,'Max'))
- exit = wah(fs,exit,handles);
+ exit = wah(fs,exit,handles,hObject);
 end
 
+%------------------Panning -----------------------------------
+pan = @panning;
+exit = pan(exit,handles,hObject);
 %--------------- Delay-----------------------------------------------
 del=@delay;
-if (get(handles.checkbox3,'Value') == get(handles.checkbox2,'Max'))
- exit = del(fs,exit,handles);
+if (get(handles.checkbox3,'Value') == get(handles.checkbox3,'Max'))
+ exit = del(fs,exit,handles,hObject);
+ disp(exit);
+ playerpan=audioplayer(exit,fs);
+ play(playerpan);
+else
+   playerpan=audioplayer(exit,fs);
+    play(playerpan); 
 end
+
 %--------------Reproduzir áudio---------------------------------------
-playerpan=audioplayer(exit,fs);
-play(playerpan);
-%disp(exit);
 handles.playerpan=playerpan;
 
 handles.exit=exit;
@@ -512,3 +517,25 @@ function checkbox3_Callback(hObject, eventdata, handles)
 
 
 
+
+
+% --- Executes on slider movement.
+function slider11_Callback(hObject, eventdata, handles)
+% hObject    handle to slider11 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function slider11_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider11 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
