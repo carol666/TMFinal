@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 23-May-2019 22:03:30
+% Last Modified by GUIDE v2.5 26-May-2019 22:16:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -55,6 +55,9 @@ function gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for gui
 handles.output = hObject;
 
+%set(handles.slider9, 'SliderStep', [1/(25000-10000) , 10/(25000-10000) ]);
+%set(handles.slider10, 'SliderStep', [1/(1-0) , 10/(1-0) ]);
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -80,13 +83,13 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 [nome,local] = uigetfile('*.wav','Coloque Um Ficheiro mp3.');       % Abrir explorador para carregar ficheiro
 [audio,fs]=audioread(nome); 
-%----------------- Escrever Info do ?udio no GUI ------------------------
-string=['Fs: ' num2str(fs) ' Hz']; % Frequ?ncia de amostragem
+%----------------- Escrever Info do áudio no GUI ------------------------
+string=['Fs: ' num2str(fs) ' Hz']; % Frequência de amostragem
 set(handles.text17,'String',string);
 string=['File: ' num2str(nome) ]; % Nome do ficheiro
 set(handles.text16,'String',string)
 dur = round(length(audio)/fs);
-string=['Length: ' num2str(dur) 'seg']; % Dura??o do ficheiro
+string=['Length: ' num2str(dur) 'seg']; % Duração do ficheiro
 set(handles.text18,'String',string);
 %----------------- Handles ------------------------------------------------
 handles.audio=audio;
@@ -96,7 +99,7 @@ handles.player=player;
 guidata(hObject, handles);
 
 % --- Executes on button press in pushbutton8.
-function pushbutton8_Callback(hObject, eventdata, handles)  % Fun??o para reproduzir original
+function pushbutton8_Callback(hObject, eventdata, handles)  % Função para reproduzir original
 % hObject    handle to pushbutton8 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -108,33 +111,32 @@ handles.playerpan=playerpan;
 handles.exit=exit;
 guidata(hObject, handles);
 
-function yb = wahwah(fs,audio,handles,hObject)  % Fun??o para efeito Wah-wah
-damp=0.05;
+function yb = wahwah(fs,audio,handles,hObject)  % Função para efeito Wah-wah
+damping=0.05;
 minf=500;
 maxf=3000;
-Fw=get(handles.slider7,'Value');    % Varia??o frequ?ncia
+Fw=get(handles.slider7,'Value');    % Variação frequência
 delta = Fw/fs;
-% create triangle wave of centre frequency values
+% Criar onda triangular com frequência central Fc
 Fc=minf:delta:maxf;
 while(length(Fc) < length(audio) )
     Fc= [ Fc (maxf:-delta:minf) ];
     Fc= [ Fc (minf:delta:maxf) ];
 end
-% trim tri wave to size of input
+% trim onda 
 Fc = Fc(1:length(audio));
-% difference equation coefficients
-% must be recalculated each time Fc changes
+% Expressão matemática
 F1 = 2*sin((pi*Fc(1))/fs);
-% this dictates size of the pass bands
-Q1 = 2*damp;
-yh=zeros(size(audio)); % create emptly out vectors
+% Passa-banda
+Q1 = 2*damping;
+yh=zeros(size(audio)); % Criar vetores vazios
 yb=zeros(size(audio));
 yl=zeros(size(audio));
-% first sample, to avoid referencing of negative signals
+
 yh(1) = audio(1);
 yb(1) = F1*yh(1);
 yl(1) = F1*yb(1);
-% apply difference equation to the sample
+
 for n=2:length(audio),
 yh(n) = audio(n) - yl(n-1) - Q1*yb(n-1);
 yb(n) = F1*yh(n) + yb(n-1);
@@ -147,7 +149,7 @@ yb = yb/maxyb;
 
 
 
-function exit = panning(audiotot, handles, hObject) % Fun??o efeito panning
+function exit = panning(audiotot, handles, hObject) % Função efeito panning
 ang_inicial = (get(handles.slider3,'Value')*-1); 
 ang_final=ang_inicial;
 v = 32;
@@ -165,38 +167,19 @@ for i=1:v
     m = m + seg;
 end;
 
-function out = delay(fs,audio,handles,hObject)  % Fun??o para efeito delay
-s=size(audio,1);
-out=zeros(s,1);
-%x=zeros(s,1);
-z=zeros(s,1);
-%y=zeros(s,1);
-%e=zeros(s,1);
-f=zeros(s,1);
-wet=get(handles.slider8,'Value');       % Bot?o wet/dry
-string=[num2str(wet) '%'];
-set(handles.text13,'String',string);
-vde=get(handles.slider9,'Value');       % Delay Time
+function out = delay(fs,audio,handles,hObject)  % Função para efeito delay
+content=(get(handles.popupmenu1,'String'));
+vde=str2num(content{get(handles.popupmenu1,'Value')});       % Tempo Delay
 string=[num2str(vde) 'ms'];
-set(handles.text14,'String',string);
-delay=round(vde*fs); %delay em samples
-feed=get(handles.slider10,'Value');     % Feedback
+content=(get(handles.popupmenu2,'String'));
+feed=str2num(content{get(handles.popupmenu2,'Value')});         % Feedback
 string=[num2str(feed) '%'];
-set(handles.text15,'String',string);
-
-for i=1:s
-    x(i)=audio(i);
-    y(i)=x(i)*wet;
-    if(i-delay>=1)
-        e(i)=z(i-delay); 
-    else
-        e(i)=0; %se tiver vazio
-    end
-    
-    f(i)=e(i)*feed;
-    z(i)=x(i)+f(i);
-    out(i)=e(i)+y(i);
+out=audio;
+for n=vde+1:length(audio)
+         out(n)=feed*out(n-vde)+audio(n);
 end
+
+
 
 function y = distortion(x,handles,hObject)
 gain=get(handles.slider5,'Value');
@@ -231,7 +214,7 @@ end
 exit=audiotot;
 %---------------Distortion------------------------------------------------
 dist=@distortion;
-if (get(handles.checkbox1,'Value') == get(handles.checkbox1,'Max'))     % Caso utilizador carregue na op??o de usar efeito
+if (get(handles.checkbox1,'Value') == get(handles.checkbox1,'Max'))     % Caso utilizador carregue na opção de usar efeito
 exit = dist(exit,handles,hObject);
 end
 %-----------------Wah-Wah--------------------------------------------
@@ -247,17 +230,12 @@ exit = pan(exit,handles,hObject);
 del=@delay;
 if (get(handles.checkbox3,'Value') == get(handles.checkbox3,'Max'))
  exit = del(fs,exit,handles,hObject);
- disp(exit);
- playerpan=audioplayer(exit,fs);
- play(playerpan);
-else
-   playerpan=audioplayer(exit,fs);
-    play(playerpan); 
 end
 
-%--------------Reproduzir ?udio---------------------------------------
+%--------------Reproduzir áudio---------------------------------------
+playerpan=audioplayer(exit,fs);
+play(playerpan);
 handles.playerpan=playerpan;
-
 handles.exit=exit;
 guidata(hObject, handles);
 
@@ -537,4 +515,72 @@ function slider11_CreateFcn(hObject, eventdata, handles)
 % Hint: slider controls usually have a light gray background.
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on slider movement.
+function slider12_Callback(hObject, eventdata, handles)
+% hObject    handle to slider12 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function slider12_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider12 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on selection change in popupmenu1.
+function popupmenu1_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu1 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu1
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupmenu2.
+function popupmenu2_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu2 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu2
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
